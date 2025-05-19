@@ -34,7 +34,9 @@ exports.createSchedulePost = async ({
 
 exports.getSchedulesByGroup = async (groupId) => {
   const db = getDb();
-
+  const sample = await db.collection('schedule_posts').findOne();
+    console.log('🔥 저장된 스케줄:', sample);
+  console.log('groupId typeof:', typeof sample.groupId);
   console.log('📌 groupId typeof:', typeof groupId, 'value:', groupId);
 
   // ✅ 더 이상 group_members 확인 안 함
