@@ -30,7 +30,7 @@ exports.createSchedulePost = async ({
   return { scheduleId: result.insertedId };
 };
 
-const { getDb } = require('../utils/mongoClient');
+
 
 exports.getSchedulesByGroup = async (groupId) => {
   const db = getDb();
