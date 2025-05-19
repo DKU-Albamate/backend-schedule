@@ -21,16 +21,16 @@ exports.createSchedulePost = async (req, res) => {
   }
 };
 
+
 exports.getSchedulesByGroup = async (req, res) => {
   try {
-    const userUid = req.user.uid;
     const groupId = req.query.groupId;
 
     if (!groupId) {
       return res.status(400).json({ success: false, message: 'groupId가 필요합니다.' });
     }
 
-    const schedules = await scheduleService.getSchedulesByGroup(groupId, userUid);
+    const schedules = await scheduleService.getSchedulesByGroup(groupId);
     res.status(200).json({ success: true, data: schedules });
   } catch (error) {
     console.error('스케줄 목록 조회 실패:', error.message);
