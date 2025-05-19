@@ -39,7 +39,7 @@ exports.getSchedulesByGroup = async (groupId) => {
 
   const schedules = await db
     .collection('schedule_posts')
-    .find({ groupId })
+    .find({ groupId: String(groupId) })
     .sort({ createdAt: -1 })
     .toArray();
 
