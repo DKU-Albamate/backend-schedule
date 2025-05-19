@@ -35,6 +35,8 @@ exports.createSchedulePost = async ({
 exports.getSchedulesByGroup = async (groupId) => {
   const db = getDb();
 
+  console.log('📌 groupId typeof:', typeof groupId, 'value:', groupId);
+
   // ✅ 더 이상 group_members 확인 안 함
 
   const schedules = await db

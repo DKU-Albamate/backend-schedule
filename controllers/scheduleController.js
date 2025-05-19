@@ -25,7 +25,8 @@ exports.createSchedulePost = async (req, res) => {
 exports.getSchedulesByGroup = async (req, res) => {
   try {
     const groupId = req.query.groupId;
-
+    console.log('🔍 Controller received groupId:', groupId); 
+    
     if (!groupId) {
       return res.status(400).json({ success: false, message: 'groupId가 필요합니다.' });
     }
