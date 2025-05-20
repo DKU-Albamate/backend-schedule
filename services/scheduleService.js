@@ -80,7 +80,7 @@ exports.getUnavailableDatesByUser = async ({ scheduleId, userUid }) => {
 exports.getUnavailableByScheduleId = async (scheduleId) => {
   const db = getDb();
   const schedule = await db.collection('schedule_posts').findOne(
-    { _id: new ObjectId(scheduleId) },
+    { _id: ObjectId.createFromHexString(scheduleId) },
     { projection: { unavailable: 1 } }
   );
 
