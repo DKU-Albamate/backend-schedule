@@ -61,3 +61,20 @@ exports.submitUnavailableDates = async (req, res) => {
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
+// 알바생이 자신이 선택한 날짜 조회
+exports.getUnavailableDatesByUser = async (req, res) => {
+  try {
+    const userUid = req.user.uid;
+    const { scheduleId } = req.params;
+
+    const dates = await scheduleService.getUnavailableDatesByUser({
+      scheduleId,
+      userUid,
+    });
+
+    res.status(200).json({ success: true, data: dates });
+  } catch (error) {
+    console.error('❌ 불가 날짜 조회 실패:', error.message);
+    res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};

@@ -63,3 +63,15 @@ exports.saveUnavailableDates = async ({ scheduleId, userUid, dates }) => {
   return result;
 };
 
+
+exports.getUnavailableDatesByUser = async ({ scheduleId, userUid }) => {
+  const db = getDb();
+  const schedulePosts = db.collection('schedule_posts');
+
+  const post = await schedulePosts.findOne(
+    { _id: new ObjectId(scheduleId) },
+    { projection: { [`unavailable.${userUid}`]: 1 } }
+  );
+
+  return post?.unavailable?.[userUid] ?? []; // 없으면 빈 배열
+};
