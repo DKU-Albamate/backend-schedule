@@ -13,7 +13,7 @@ app.use('/api/schedules', scheduleRoutes);
 const startServer = async () => {
   try {
     await connectDB();
-    const PORT = process.env.PORT || 5000;
+    const PORT = process.env.PORT || 10000;
     app.listen(PORT, () => {
       console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
     });
