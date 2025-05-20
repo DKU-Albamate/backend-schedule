@@ -80,6 +80,7 @@ exports.getUnavailableDatesByUser = async (req, res) => {
 };
 
 // 사장님이 알바생 스케줄 신청 확인
+
 exports.getUnavailableByScheduleId = async (req, res) => {
   try {
     const { scheduleId } = req.params;
@@ -88,7 +89,8 @@ exports.getUnavailableByScheduleId = async (req, res) => {
     }
 
     const unavailableData = await scheduleService.getUnavailableByScheduleId(scheduleId);
-    res.status(200).json({ success: true, data: unavailableData });
+
+    res.status(200).json({ success: true, data: unavailableData }); // ❗ 여기서 전체 데이터 반환
   } catch (error) {
     console.error('❌ 알바생 불가능 날짜 조회 실패:', error.message);
     res.status(500).json({ success: false, message: '서버 오류' });
