@@ -49,3 +49,23 @@ exports.getSchedulesByGroup = async (groupId) => {
 
   return schedules;
 };
+
+const { ObjectId } = require('mongodb');
+const { getDb } = require('../utils/mongoClient');
+
+exports.saveUnavailableDates = async ({ scheduleId, userUid, dates }) => {
+  const db = getDb();
+  const schedulePosts = db.collection('schedule_posts');
+
+  const result = await schedulePosts.updateOne(
+    { _id: new ObjectId(scheduleId) },
+    {
+      $set: {
+        [`unavailable.${userUid}`]: dates,
+      },
+    }
+  );
+
+  return result;
+};
+

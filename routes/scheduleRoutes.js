@@ -7,4 +7,6 @@ router.post('/create', authenticate, scheduleController.createSchedulePost);
 // 🔹 특정 그룹의 스케줄 목록 조회
 router.get('/', authenticate, scheduleController.getSchedulesByGroup);
 
+router.put('/:scheduleId/unavailable', authenticate, scheduleController.submitUnavailableDates);
+
 module.exports = router;

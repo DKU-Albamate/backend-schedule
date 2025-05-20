@@ -1,5 +1,5 @@
 const scheduleService = require('../services/scheduleService');
-
+// 사장님 스케줄 게시글 생성
 exports.createSchedulePost = async (req, res) => {
   try {
     const ownerUid = req.user.uid;
@@ -21,12 +21,12 @@ exports.createSchedulePost = async (req, res) => {
   }
 };
 
-
+// 자신의 그룹의 스케줄 게시글 확인인
 exports.getSchedulesByGroup = async (req, res) => {
   try {
     const groupId = req.query.groupId;
     console.log('🔍 Controller received groupId:', groupId); 
-    
+
     if (!groupId) {
       return res.status(400).json({ success: false, message: 'groupId가 필요합니다.' });
     }
@@ -36,5 +36,28 @@ exports.getSchedulesByGroup = async (req, res) => {
   } catch (error) {
     console.error('스케줄 목록 조회 실패:', error.message);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+// 알바생이 안되는 날짜 선택택
+exports.submitUnavailableDates = async (req, res) => {
+  try {
+    const userUid = req.user.uid;
+    const { scheduleId } = req.params;
+    const { dates } = req.body; // ✅ 예: ["2025-06-01", "2025-06-03"]
+
+    if (!Array.isArray(dates)) {
+      return res.status(400).json({ success: false, message: '날짜 리스트가 필요합니다.' });
+    }
+
+    const result = await scheduleService.saveUnavailableDates({
+      scheduleId,
+      userUid,
+      dates,
+    });
+
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error('❌ 불가 날짜 제출 실패:', error.message);
+    res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
