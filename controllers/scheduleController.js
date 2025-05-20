@@ -78,3 +78,19 @@ exports.getUnavailableDatesByUser = async (req, res) => {
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
+
+// 사장님이 알바생 스케줄 신청 확인
+exports.getUnavailableByScheduleId = async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    if (!scheduleId) {
+      return res.status(400).json({ success: false, message: 'scheduleId가 필요합니다.' });
+    }
+
+    const unavailableData = await scheduleService.getUnavailableByScheduleId(scheduleId);
+    res.status(200).json({ success: true, data: unavailableData });
+  } catch (error) {
+    console.error('❌ 알바생 불가능 날짜 조회 실패:', error.message);
+    res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};

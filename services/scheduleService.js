@@ -75,3 +75,15 @@ exports.getUnavailableDatesByUser = async ({ scheduleId, userUid }) => {
 
   return post?.unavailable?.[userUid] ?? []; // 없으면 빈 배열
 };
+
+// 사장님이 알바생 신청 내역 조회
+exports.getUnavailableByScheduleId = async (scheduleId) => {
+  const db = getDb();
+  const schedule = await db.collection('schedule_posts').findOne(
+    { _id: new ObjectId(scheduleId) },
+    { projection: { unavailable: 1 } }
+  );
+
+  if (!schedule) throw new Error('스케줄을 찾을 수 없습니다.');
+  return schedule.unavailable || {};
+};
