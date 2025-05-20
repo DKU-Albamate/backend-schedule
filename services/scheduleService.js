@@ -80,9 +80,11 @@ exports.getUnavailableDatesByUser = async ({ scheduleId, userUid }) => {
 exports.getUnavailableByScheduleId = async (scheduleId) => {
   const db = getDb();
   const schedule = await db.collection('schedule_posts').findOne(
-    { _id: ObjectId.createFromHexString(scheduleId) },
+    { _id: new ObjectId(scheduleId) },
     { projection: { unavailable: 1 } }
   );
+
+  console.log('📦 [Service] schedule 문서 전체:', schedule);
 
   if (!schedule) throw new Error('스케줄을 찾을 수 없습니다.');
   return schedule.unavailable || {};

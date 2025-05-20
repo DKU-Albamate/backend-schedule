@@ -10,7 +10,8 @@ router.get('/', authenticate, scheduleController.getSchedulesByGroup);
 router.put('/:scheduleId/unavailable', authenticate, scheduleController.submitUnavailableDates);
 
 router.get('/:scheduleId/unavailable', authenticate, scheduleController.getUnavailableDatesByUser);
-
-router.get('/:scheduleId/unavailable', authenticate, scheduleController.getUnavailableByScheduleId);
-
+router.get('/:scheduleId/unavailable', authenticate, (req, res, next) => {
+  console.log('➡️ 요청 scheduleId:', req.params.scheduleId); // ✅ 요청 정확성 확인
+  next();
+}, scheduleController.getUnavailableByScheduleId);
 module.exports = router;
