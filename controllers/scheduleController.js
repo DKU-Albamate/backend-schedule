@@ -132,3 +132,18 @@ exports.confirmSchedule = async (req, res) => {
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
+// 확정된 스케줄 조회
+exports.getConfirmedSchedulesByGroup = async (req, res) => {
+  try {
+    const groupId = req.query.groupId;
+    if (!groupId) {
+      return res.status(400).json({ success: false, message: 'groupId가 필요합니다.' });
+    }
+
+    const confirmedSchedules = await scheduleService.getConfirmedSchedulesByGroup(groupId);
+    res.status(200).json({ success: true, data: confirmedSchedules });
+  } catch (error) {
+    console.error('❌ 확정된 스케줄 목록 조회 실패:', error);
+    res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};

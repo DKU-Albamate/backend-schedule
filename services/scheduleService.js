@@ -108,3 +108,23 @@ exports.confirmSchedule = async ({ scheduleId, scheduleMap, confirmedTitle }) =>
 
   return result.matchedCount > 0;
 };
+
+const { getDb } = require('../utils/mongoClient');
+
+exports.getConfirmedSchedulesByGroup = async (groupId) => {
+  const db = getDb();
+  const schedulePosts = db.collection('schedule_posts');
+
+  const confirmed = await schedulePosts
+    .find({ groupId, status: 'confirmed' })
+    .project({
+      _id: 1,
+      confirmedTitle: 1,
+      confirmedAt: 1,
+      assignments: 1,
+    })
+    .sort({ confirmedAt: -1 }) // 최신순 정렬
+    .toArray();
+
+  return confirmed;
+};
