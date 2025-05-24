@@ -109,8 +109,6 @@ exports.confirmSchedule = async ({ scheduleId, scheduleMap, confirmedTitle }) =>
   return result.matchedCount > 0;
 };
 
-const { getDb } = require('../utils/mongoClient');
-
 exports.getConfirmedSchedulesByGroup = async (groupId) => {
   const db = getDb();
   const schedulePosts = db.collection('schedule_posts');
