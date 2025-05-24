@@ -97,3 +97,38 @@ exports.getUnavailableByScheduleId = async (req, res) => {
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
+//스케줄 확정
+exports.confirmSchedule = async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const { scheduleMap, confirmedTitle } = req.body;
+
+    if (!scheduleMap || typeof scheduleMap !== 'object' || !confirmedTitle) {
+      return res.status(400).json({
+        success: false,
+        message: 'scheduleMap과 confirmedTitle이 모두 필요합니다.',
+      });
+    }
+
+    const result = await scheduleService.confirmSchedule({
+      scheduleId,
+      scheduleMap,
+      confirmedTitle,
+    });
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: '스케줄 게시글을 찾을 수 없습니다.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: '스케줄이 성공적으로 확정되었습니다.',
+    });
+  } catch (error) {
+    console.error('❌ 스케줄 확정 실패:', error);
+    res.status(500).json({ success: false, message: '서버 오류' });
+  }
+};

@@ -11,4 +11,5 @@ router.put('/:scheduleId/unavailable', authenticate, scheduleController.submitUn
 
 router.get('/:scheduleId/unavailable', authenticate, scheduleController.getUnavailableDatesByUser);
 router.get('/:scheduleId/unavailable/all', authenticate, scheduleController.getUnavailableByScheduleId);
+router.patch('/:scheduleId/confirm', authenticate, scheduleController.confirmSchedule);
 module.exports = router;

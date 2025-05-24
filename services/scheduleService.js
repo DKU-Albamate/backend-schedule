@@ -89,3 +89,22 @@ exports.getUnavailableByScheduleId = async (scheduleId) => {
   if (!schedule) throw new Error('스케줄을 찾을 수 없습니다.');
   return schedule.unavailable || {};
 };
+
+exports.confirmSchedule = async ({ scheduleId, scheduleMap, confirmedTitle }) => {
+  const db = getDb();
+  const schedulePosts = db.collection('schedule_posts');
+
+  const result = await schedulePosts.updateOne(
+    { _id: new ObjectId(scheduleId) },
+    {
+      $set: {
+        assignments: scheduleMap,
+        confirmedTitle,
+        status: 'confirmed',
+        confirmedAt: new Date(),
+      },
+    }
+  );
+
+  return result.matchedCount > 0;
+};
