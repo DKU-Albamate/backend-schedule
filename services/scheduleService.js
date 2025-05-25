@@ -38,7 +38,10 @@ exports.getSchedulesByGroup = async (groupId) => {
 
   const schedules = await db
     .collection('schedule_posts')
-    .find({ groupId: String(groupId) })
+    .find({
+      groupId: String(groupId),
+      status: 'draft' // 확정된 스케줄은 스케줄 신청 게시판에서 삭제
+    })
     .sort({ createdAt: -1 })
     .toArray();
 
