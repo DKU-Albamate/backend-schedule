@@ -136,6 +136,12 @@ exports.getTodayWorkers = async (groupId) => {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
 
   try {
+    console.log('🔍 Searching for schedule with:', {
+      groupId: String(groupId),
+      status: 'confirmed',
+      date: today
+    });
+
     // 가장 최근에 확정된 스케줄 찾기
     const latestSchedule = await db
       .collection('schedule_posts')
@@ -152,7 +158,10 @@ exports.getTodayWorkers = async (groupId) => {
         }
       );
 
+    console.log('📦 Found schedule:', latestSchedule);
+
     if (!latestSchedule) {
+      console.log('❌ No schedule found');
       return {
         workers: [],
         message: '오늘 확정된 스케줄이 없습니다.'
@@ -160,25 +169,32 @@ exports.getTodayWorkers = async (groupId) => {
     }
 
     if (!latestSchedule.assignments || !latestSchedule.assignments[today]) {
+      console.log('❌ No assignments for today');
       return {
         workers: [],
         message: '오늘 근무자가 없습니다.'
       };
     }
 
+    // 근무자 정보 추출
+    const todayAssignments = latestSchedule.assignments[today];
+    console.log('📅 Today assignments:', todayAssignments);
+
     // 근무자 이름만 배열로 변환하고 정렬
-    const workers = Object.keys(latestSchedule.assignments[today])
-      .map(workerId => ({
-        worker_name: workerId
+    const workers = Object.entries(todayAssignments)
+      .map(([_, worker]) => ({
+        worker_name: worker.name || worker.worker_name || '알 수 없음'
       }))
       .sort((a, b) => a.worker_name.localeCompare(b.worker_name));
+
+    console.log('👥 Workers found:', workers);
 
     return {
       workers,
       message: '오늘 근무자 정보를 성공적으로 가져왔습니다.'
     };
   } catch (error) {
-    console.error('근무자 정보 조회 중 오류:', error);
+    console.error('❌ 근무자 정보 조회 중 오류:', error);
     throw new Error('근무자 정보를 가져오는 중 오류가 발생했습니다.');
   }
 };
