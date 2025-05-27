@@ -13,4 +13,8 @@ router.get('/:scheduleId/unavailable', authenticate, scheduleController.getUnava
 router.get('/:scheduleId/unavailable/all', authenticate, scheduleController.getUnavailableByScheduleId);
 router.patch('/:scheduleId/confirm', authenticate, scheduleController.confirmSchedule);
 router.get('/confirmed', authenticate, scheduleController.getConfirmedSchedulesByGroup);
+
+// 🔹 오늘 근무자 정보 조회
+router.get('/group/:groupId/today', authenticate, scheduleController.getTodayWorkers);
+
 module.exports = router;

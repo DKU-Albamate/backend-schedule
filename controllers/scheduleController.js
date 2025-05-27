@@ -147,3 +147,29 @@ exports.getConfirmedSchedulesByGroup = async (req, res) => {
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 };
+
+// 오늘 근무자 정보 조회
+exports.getTodayWorkers = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    if (!groupId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'groupId가 필요합니다.' 
+      });
+    }
+
+    const result = await scheduleService.getTodayWorkers(groupId);
+    res.status(200).json({ 
+      success: true, 
+      data: result.workers,
+      message: result.message
+    });
+  } catch (error) {
+    console.error('❌ 오늘 근무자 정보 조회 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || '서버 오류' 
+    });
+  }
+};

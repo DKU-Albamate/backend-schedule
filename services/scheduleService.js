@@ -129,3 +129,56 @@ exports.getConfirmedSchedulesByGroup = async (groupId) => {
 
   return confirmed;
 };
+
+// 오늘 근무자 정보 조회
+exports.getTodayWorkers = async (groupId) => {
+  const db = getDb();
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+  try {
+    // 가장 최근에 확정된 스케줄 찾기
+    const latestSchedule = await db
+      .collection('schedule_posts')
+      .findOne(
+        { 
+          groupId: String(groupId), 
+          status: 'confirmed',
+          [`assignments.${today}`]: { $exists: true }
+        },
+        { 
+          projection: { 
+            [`assignments.${today}`]: 1
+          }
+        }
+      );
+
+    if (!latestSchedule) {
+      return {
+        workers: [],
+        message: '오늘 확정된 스케줄이 없습니다.'
+      };
+    }
+
+    if (!latestSchedule.assignments || !latestSchedule.assignments[today]) {
+      return {
+        workers: [],
+        message: '오늘 근무자가 없습니다.'
+      };
+    }
+
+    // 근무자 이름만 배열로 변환하고 정렬
+    const workers = Object.keys(latestSchedule.assignments[today])
+      .map(workerId => ({
+        worker_name: workerId
+      }))
+      .sort((a, b) => a.worker_name.localeCompare(b.worker_name));
+
+    return {
+      workers,
+      message: '오늘 근무자 정보를 성공적으로 가져왔습니다.'
+    };
+  } catch (error) {
+    console.error('근무자 정보 조회 중 오류:', error);
+    throw new Error('근무자 정보를 가져오는 중 오류가 발생했습니다.');
+  }
+};
