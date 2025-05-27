@@ -148,13 +148,10 @@ exports.getTodayWorkers = async (groupId) => {
       .findOne(
         { 
           groupId: String(groupId), 
-          status: 'confirmed',
-          [`assignments.${today}`]: { $exists: true }
+          status: 'confirmed'
         },
         { 
-          projection: { 
-            [`assignments.${today}`]: 1
-          }
+          sort: { confirmedAt: -1 }  // 가장 최근에 확정된 스케줄
         }
       );
 
@@ -164,7 +161,7 @@ exports.getTodayWorkers = async (groupId) => {
       console.log('❌ No schedule found');
       return {
         workers: [],
-        message: '오늘 확정된 스케줄이 없습니다.'
+        message: '확정된 스케줄이 없습니다.'
       };
     }
 
@@ -181,14 +178,9 @@ exports.getTodayWorkers = async (groupId) => {
     console.log('📅 Today assignments:', todayAssignments);
 
     // 근무자 이름만 배열로 변환하고 정렬
-    const workers = Object.entries(todayAssignments)
-      .map(([_, worker]) => {
-        console.log('👤 Worker data:', worker);
-        return {
-          worker_name: worker.name || worker.worker_name || worker.workerId || '알 수 없음'
-        };
-      })
-      .sort((a, b) => a.worker_name.localeCompare(b.worker_name));
+    const workers = todayAssignments.map(worker => ({
+      worker_name: worker.name || worker.worker_name || worker.workerId || '알 수 없음'
+    })).sort((a, b) => a.worker_name.localeCompare(b.worker_name));
 
     console.log('👥 Workers found:', workers);
 
