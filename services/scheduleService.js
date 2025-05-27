@@ -182,9 +182,12 @@ exports.getTodayWorkers = async (groupId) => {
 
     // 근무자 이름만 배열로 변환하고 정렬
     const workers = Object.entries(todayAssignments)
-      .map(([_, worker]) => ({
-        worker_name: worker.name || worker.worker_name || '알 수 없음'
-      }))
+      .map(([_, worker]) => {
+        console.log('👤 Worker data:', worker);
+        return {
+          worker_name: worker.name || worker.worker_name || worker.workerId || '알 수 없음'
+        };
+      })
       .sort((a, b) => a.worker_name.localeCompare(b.worker_name));
 
     console.log('👥 Workers found:', workers);
