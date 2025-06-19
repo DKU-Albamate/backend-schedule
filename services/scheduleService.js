@@ -178,9 +178,10 @@ exports.getTodayWorkers = async (groupId) => {
     console.log('📅 Today assignments:', todayAssignments);
 
     // 근무자 이름만 배열로 변환하고 정렬
-    const workers = todayAssignments.map(worker => ({
-      worker_name: worker.name || worker.worker_name || worker.workerId || '알 수 없음'
+    const workers = todayAssignments.map(workerName => ({
+      worker_name: workerName || '알 수 없음'
     })).sort((a, b) => a.worker_name.localeCompare(b.worker_name));
+
 
     console.log('👥 Workers found:', workers);
 
