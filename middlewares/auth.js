@@ -7,15 +7,41 @@ try {
   const raw = process.env.FIREBASE_ADMIN_KEY;
   if (!raw) throw new Error('FIREBASE_ADMIN_KEY is not set');
 
-  // 환경에 따라 private_key의 줄바꿈이 실제 개행 또는 "\\n" 문자열로 올 수 있으므로 치환 후 파싱
-  const normalized = raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw;
-
-  // 이미 객체라면 그대로 사용(드물게 프로세스에서 객체로 주입되는 경우)
-  firebaseConfig = typeof normalized === 'string' ? JSON.parse(normalized) : normalized;
+  // 이미 객체가 주입된 경우 (드물게) 바로 사용
+  if (typeof raw !== 'string') {
+    firebaseConfig = raw;
+  } else {
+    // 시도 1: 그대로 파싱
+    try {
+      firebaseConfig = JSON.parse(raw);
+    } catch (e1) {
+      // 시도 2: 이스케이프된 "\\n"을 실제 개행으로 바꾼 뒤 파싱
+      try {
+        const replaced = raw.replace(/\\\\n/g, '\\n');
+        const normalized = replaced.includes('\\n') ? replaced.replace(/\\n/g, '\n') : replaced;
+        firebaseConfig = JSON.parse(normalized);
+      } catch (e2) {
+        // 시도 3: private_key 내부의 실제 개행(또는 포맷 문제)을 이스케이프 시도
+        try {
+          const fixed = raw.replace(/("private_key"\s*:\s*")([\s\S]*?)(")/m, (_m, p1, p2, p3) => {
+            // p2는 private_key 값(개행 포함 가능). 개행을 이스케이프 시킨다.
+            const escaped = p2.replace(/\r?\n/g, '\\\\n');
+            return p1 + escaped + p3;
+          });
+          firebaseConfig = JSON.parse(fixed);
+        } catch (e3) {
+          console.error('FIREBASE_ADMIN_KEY 파싱 시도 실패 (원본/normalized/fixed 모두 실패)');
+          console.error('원본 길이:', raw.length);
+          console.error('첫 200 chars:', raw.slice(0, 200));
+          console.error('parse errors:', e1 && e1.message, e2 && e2.message, e3 && e3.message);
+          throw e3;
+        }
+      }
+    }
+  }
 } catch (err) {
   console.error('FIREBASE_ADMIN_KEY 파싱 오류:', err && err.message ? err.message : err);
-  // 초기화 실패는 치명적이므로 명확한 로그를 남기고 프로세스 종료를 권장합니다.
-  // Render에서 재시작/로그를 확인할 수 있게 에러를 던집니다.
+  // 초기화 실패는 치명적이므로 에러를 던집니다.
   throw err;
 }
 
