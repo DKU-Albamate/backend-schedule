@@ -11,16 +11,7 @@ app.use('/api/schedules', scheduleRoutes);
 
 const startServer = async () => {
   try {
-    // MongoDB를 더 이상 기본으로 사용하지 않습니다. 만약 기존 Mongo 연결이 필요하면
-    // 환경변수 MONGODB_URL을 설정하여 연결을 활성화할 수 있습니다.
-    if (process.env.MONGODB_URL) {
-      const { connectDB } = require('./utils/mongoClient');
-      await connectDB();
-      console.log('MongoDB 연결 활성화 - MONGODB_URL이 설정되어 있습니다.');
-    } else {
-      console.log('MONGODB_URL 미설정 - MongoDB 연결을 스킵합니다 (Supabase 사용).');
-    }
-
+    // MongoDB 관련 코드는 제거되었습니다. Supabase가 데이터 저장소로 사용됩니다.
     const PORT = process.env.PORT || 10000;
     app.listen(PORT, () => {
       console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
