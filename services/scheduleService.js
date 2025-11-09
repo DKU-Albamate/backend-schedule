@@ -1,196 +1,165 @@
-const { ObjectId } = require('mongodb');
-const { getDb } = require('../utils/mongoClient');
+/*  Supabase 기반으로 변환된 scheduleService
+    - backend/config/supabaseClient.js를 재사용하려 시도하고, 없으면 env로 생성
+    - JSONB 필드(unavailable, assignments)를 전체 교체 방식으로 업데이트(충돌 가능성 낮음)
+*/
+const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
 
-exports.createSchedulePost = async ({
-  groupId,
-  title,
-  description,
-  year,
-  month,
-  ownerUid,
-}) => {
-  const db = getDb();
-  const schedulePosts = db.collection('schedule_posts');
+let supabase;
+try {
+  // 기존 backend 프로젝트의 supabaseClient 재사용 시도
+  const client = require('../../backend/config/supabaseClient');
+  supabase = client.supabase;
+} catch (err) {
+  const { createClient } = require('@supabase/supabase-js');
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('Supabase 설정을 찾을 수 없습니다. SUPABASE_URL 또는 SUPABASE_SERVICE_ROLE_KEY가 필요합니다.');
+  }
+  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+}
 
+const TABLE = 'schedule_posts';
 
-
+exports.createSchedulePost = async ({ groupId, title, description, year, month, ownerUid }) => {
+  const id = uuidv4();
   const newPost = {
-    groupId,
-    title,
-    description,
-    year,
-    month,
-    ownerUid,
-    createdAt: new Date(),
-    status: 'draft',       // 추후: 확정됨(confirm), 작성 중(draft)
-    unavailable: {},       // 알바 불가능 날짜 추후 저장 예정
-    assignments: {},       // 알바 배정 결과 추후 저장 예정
+    id,
+    group_id: String(groupId || ''),
+    title: title || null,
+    description: description || null,
+    year: year ?? null,
+    month: month ?? null,
+    owner_uid: ownerUid || null,
+    status: 'draft',
+    created_at: new Date().toISOString(),
+    unavailable: {},
+    assignments: {},
   };
 
-  const result = await schedulePosts.insertOne(newPost);
-  return { scheduleId: result.insertedId };
+  const { error } = await supabase.from(TABLE).insert(newPost);
+  if (error) {
+    console.error('createSchedulePost supabase error:', error);
+    throw error;
+  }
+
+  return { scheduleId: id };
 };
-
-
 
 exports.getSchedulesByGroup = async (groupId) => {
-  const db = getDb();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('group_id', String(groupId))
+    .eq('status', 'draft')
+    .order('created_at', { ascending: false });
 
-  const schedules = await db
-    .collection('schedule_posts')
-    .find({
-      groupId: String(groupId),
-      status: 'draft' // 확정된 스케줄은 스케줄 신청 게시판에서 삭제
-    })
-    .sort({ createdAt: -1 })
-    .toArray();
-
-  return schedules;
+  if (error) {
+    console.error('getSchedulesByGroup error:', error);
+    throw error;
+  }
+  return data || [];
 };
-
-
 
 exports.saveUnavailableDates = async ({ scheduleId, userUid, dates }) => {
-  const db = getDb();
-  const schedulePosts = db.collection('schedule_posts');
+  // 안전을 위해 현재 unavailable 객체를 읽고 userUid 키를 업데이트한 뒤 저장
+  const { data: rows, error: fetchErr } = await supabase.from(TABLE).select('unavailable').eq('id', scheduleId).single();
+  if (fetchErr) {
+    console.error('saveUnavailableDates fetch error:', fetchErr);
+    throw fetchErr;
+  }
 
-  const result = await schedulePosts.updateOne(
-    { _id: new ObjectId(scheduleId) },
-    {
-      $set: {
-        [`unavailable.${userUid}`]: dates,
-      },
-    }
-  );
+  const existing = rows?.unavailable || {};
+  existing[userUid] = dates;
 
-  return result;
+  const { error: updateErr } = await supabase.from(TABLE).update({ unavailable: existing }).eq('id', scheduleId);
+  if (updateErr) {
+    console.error('saveUnavailableDates update error:', updateErr);
+    throw updateErr;
+  }
+  return { ok: true };
 };
-
 
 exports.getUnavailableDatesByUser = async ({ scheduleId, userUid }) => {
-  const db = getDb();
-  const schedulePosts = db.collection('schedule_posts');
-
-  const post = await schedulePosts.findOne(
-    { _id: new ObjectId(scheduleId) },
-    { projection: { [`unavailable.${userUid}`]: 1 } }
-  );
-
-  return post?.unavailable?.[userUid] ?? []; // 없으면 빈 배열
+  const { data: row, error } = await supabase.from(TABLE).select('unavailable').eq('id', scheduleId).single();
+  if (error) {
+    console.error('getUnavailableDatesByUser error:', error);
+    throw error;
+  }
+  return (row?.unavailable?.[userUid]) || [];
 };
 
-// 사장님이 알바생 신청 내역 조회
 exports.getUnavailableByScheduleId = async (scheduleId) => {
-  const db = getDb();
-  const schedule = await db.collection('schedule_posts').findOne(
-    { _id: new ObjectId(scheduleId) },
-    { projection: { unavailable: 1 } }
-  );
-
-  console.log('📦 [Service] schedule 문서 전체:', schedule);
-
-  if (!schedule) throw new Error('스케줄을 찾을 수 없습니다.');
-  return schedule.unavailable || {};
+  const { data: row, error } = await supabase.from(TABLE).select('unavailable').eq('id', scheduleId).single();
+  if (error) {
+    console.error('getUnavailableByScheduleId error:', error);
+    throw error;
+  }
+  if (!row) throw new Error('스케줄을 찾을 수 없습니다.');
+  return row.unavailable || {};
 };
 
 exports.confirmSchedule = async ({ scheduleId, scheduleMap, confirmedTitle }) => {
-  const db = getDb();
-  const schedulePosts = db.collection('schedule_posts');
+  const payload = {
+    assignments: scheduleMap,
+    confirmed_title: confirmedTitle || null,
+    status: 'confirmed',
+    confirmed_at: new Date().toISOString(),
+  };
 
-  const result = await schedulePosts.updateOne(
-    { _id: new ObjectId(scheduleId) },
-    {
-      $set: {
-        assignments: scheduleMap,
-        confirmedTitle,
-        status: 'confirmed',
-        confirmedAt: new Date(),
-      },
-    }
-  );
-
-  return result.matchedCount > 0;
+  const { error } = await supabase.from(TABLE).update(payload).eq('id', scheduleId);
+  if (error) {
+    console.error('confirmSchedule error:', error);
+    throw error;
+  }
+  return true;
 };
 
 exports.getConfirmedSchedulesByGroup = async (groupId) => {
-  const db = getDb();
-  const schedulePosts = db.collection('schedule_posts');
-
-  const confirmed = await schedulePosts
-    .find({ groupId, status: 'confirmed' })
-    .project({
-      _id: 1,
-      confirmedTitle: 1,
-      confirmedAt: 1,
-      assignments: 1,
-    })
-    .sort({ confirmedAt: -1 }) // 최신순 정렬
-    .toArray();
-
-  return confirmed;
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('id, confirmed_title, confirmed_at, assignments')
+    .eq('group_id', groupId)
+    .eq('status', 'confirmed')
+    .order('confirmed_at', { ascending: false });
+  if (error) {
+    console.error('getConfirmedSchedulesByGroup error:', error);
+    throw error;
+  }
+  return data || [];
 };
 
-// 오늘 근무자 정보 조회
 exports.getTodayWorkers = async (groupId) => {
-  const db = getDb();
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
   try {
-    console.log('🔍 Searching for schedule with:', {
-      groupId: String(groupId),
-      status: 'confirmed',
-      date: today
-    });
+    // 가장 최근에 확정된 스케줄
+    const { data: rows, error: fetchErr } = await supabase
+      .from(TABLE)
+      .select('assignments')
+      .eq('group_id', String(groupId))
+      .eq('status', 'confirmed')
+      .order('confirmed_at', { ascending: false })
+      .limit(1);
 
-    // 가장 최근에 확정된 스케줄 찾기
-    const latestSchedule = await db
-      .collection('schedule_posts')
-      .findOne(
-        { 
-          groupId: String(groupId), 
-          status: 'confirmed'
-        },
-        { 
-          sort: { confirmedAt: -1 }  // 가장 최근에 확정된 스케줄
-        }
-      );
-
-    console.log('📦 Found schedule:', latestSchedule);
-
-    if (!latestSchedule) {
-      console.log('❌ No schedule found');
-      return {
-        workers: [],
-        message: '확정된 스케줄이 없습니다.'
-      };
+    if (fetchErr) {
+      console.error('getTodayWorkers fetch error:', fetchErr);
+      throw fetchErr;
     }
 
-    if (!latestSchedule.assignments || !latestSchedule.assignments[today]) {
-      console.log('❌ No assignments for today');
-      return {
-        workers: [],
-        message: '오늘 근무자가 없습니다.'
-      };
+    const latest = rows && rows.length ? rows[0] : null;
+    if (!latest || !latest.assignments || !latest.assignments[today]) {
+      return { workers: [], message: '오늘 근무자가 없습니다.' };
     }
 
-    // 근무자 정보 추출
-    const todayAssignments = latestSchedule.assignments[today];
-    console.log('📅 Today assignments:', todayAssignments);
+    const todayAssignments = latest.assignments[today];
+    const workers = todayAssignments.map((workerName) => ({ worker_name: workerName || '알 수 없음' }))
+      .sort((a, b) => a.worker_name.localeCompare(b.worker_name));
 
-    // 근무자 이름만 배열로 변환하고 정렬
-    const workers = todayAssignments.map(workerName => ({
-      worker_name: workerName || '알 수 없음'
-    })).sort((a, b) => a.worker_name.localeCompare(b.worker_name));
-
-
-    console.log('👥 Workers found:', workers);
-
-    return {
-      workers,
-      message: '오늘 근무자 정보를 성공적으로 가져왔습니다.'
-    };
-  } catch (error) {
-    console.error('❌ 근무자 정보 조회 중 오류:', error);
+    return { workers, message: '오늘 근무자 정보를 성공적으로 가져왔습니다.' };
+  } catch (err) {
+    console.error('getTodayWorkers error:', err);
     throw new Error('근무자 정보를 가져오는 중 오류가 발생했습니다.');
   }
 };

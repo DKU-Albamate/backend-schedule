@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
+    "migrate": "node scripts/migrateSchedules.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,7 +16,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
-    "mongodb": "^6.16.0",
-    "mongoose": "^8.15.0"
+    "@supabase/supabase-js": "^2.29.0",
+    "uuid": "^9.0.0"
   }
 }
