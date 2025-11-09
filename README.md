@@ -21,11 +21,12 @@
 - `server.js` — MongoDB 연결/시작 로직 제거, Supabase 기반으로 동작
 - `scripts/create_tables.sql` — 테이블 DDL 보관
 
-환경 변수 (필수)
+환경 변수 (필수) - 승현씨 Render 환경 변수 아래와 같이 바꿔주세요~!
 - SUPABASE_URL — Supabase 프로젝트 URL
+
 - SUPABASE_SERVICE_ROLE_KEY — 서버 사이드(서비스 역할) 키 (비밀)
+
 - FIREBASE_ADMIN_KEY — Firebase Admin 서비스 계정 JSON. Render나 호스팅의 환경변수에 넣을 때는 JSON 문자열(또는 줄바꿈 이스케이프 형태)로 넣을 수 있음. 미들웨어에서 여러 포맷(plain JSON, escaped `\\n` 포함 등)을 시도하여 파싱함.
-- PORT — (호스팅 환경에서 자동으로 설정되지 않으면) 서버 포트
 
 로컬 실행 (개발자용)
 1) 환경 변수 설정 (macOS zsh 예)
@@ -59,7 +60,7 @@ API 엔드포인트 (주요)
 - Render에서 502/크래시 발생 원인: `FIREBASE_ADMIN_KEY` 환경변수 파싱 중 JSON.parse에서 실패(제대로 이스케이프되지 않은 줄바꿈 등). 해결: `middlewares/auth.js`에 복수의 파싱 전략과 try/catch, 그리고 `if (!admin.apps.length) admin.initializeApp(...)` 보호 로직 추가.
 - 배포 시 환경변수 값이 JSON 문자열인지(또는 `\\n`이 포함된 문자열인지)를 확인하고, 필요하면 Render 대시보드에서 적절히 이스케이프하여 저장하세요.
 
-검증(테스트) 기록
+검증(테스트) 기록 (Postman으로 테스트 해봤는데, 작동 잘 됩니다.)
 - 로컬/배포에서 다음 플로우를 확인함:
   1) POST /api/schedules/create → 성공(응답: 생성된 `scheduleId` 반환)
   2) GET /api/schedules?groupId=group1 → 인증된 요청으로 생성된 스케줄 반환(200)
@@ -69,20 +70,21 @@ API 엔드포인트 (주요)
 
 Render 배포 팁
 - Render 서비스의 환경변수에 SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, FIREBASE_ADMIN_KEY를 등록하세요.
-- Render 로그(Deploy → Logs)에서 요청 ID나 에러 스택을 확인하면 빠르게 원인 파악이 가능합니다.
+- Render 로그는 제가 따로 설정안해둬서 배포되었는지 아닌지만 볼 수 있습니다.
 
-보안 및 운영 권고
 - `SUPABASE_SERVICE_ROLE_KEY`는 강력히 비공개로 관리하세요. 클라이언트로 노출되면 안 됩니다.
 - `FIREBASE_ADMIN_KEY`는 서비스 계정 키이므로 주기적 롤링(회전)을 고려하세요.
 - CI로 자동 배포하는 경우, 환경변수나 시크릿 매니저를 사용하세요.
 
-다음 단계 제안
+앞으로 해야할 거? 좀 미뤄둬도 될듯
 - 마이그레이션 idempotency 확보: migration 실행 중복을 막는 마이그레이션 테이블/락 추가
 - 간단한 통합 테스트(생성→불가제출→확정→조회)를 CI에 추가
 - 취약점 알림(깃헙 보안 경고) 대응: 의존성 업데이트
+- 현재 제 Render로 테스트해봤는데, 승현씨 Render는 환경변수 바꿔야 합니다. 
 
 문의 및 참고
 - 주요 파일: `server.js`, `services/scheduleService.js`, `utils/supabaseClient.js`, `middlewares/auth.js`, `routes/scheduleRoutes.js`, `controllers/scheduleController.js`, `scripts/create_tables.sql`.
 - 추가로 README에 포함하거나 자동화하길 원하시면 알려주세요.
 
 날짜: 2025-11-09
+작성자: 장천명(jcm0314)
