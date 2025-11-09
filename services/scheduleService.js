@@ -1,24 +1,10 @@
 /*  Supabase 기반으로 변환된 scheduleService
-    - backend/config/supabaseClient.js를 재사용하려 시도하고, 없으면 env로 생성
-    - JSONB 필드(unavailable, assignments)를 전체 교체 방식으로 업데이트(충돌 가능성 낮음)
+    - 중앙화된 utils/supabaseClient.js를 사용하도록 변경
 */
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
-let supabase;
-try {
-  // 기존 backend 프로젝트의 supabaseClient 재사용 시도
-  const client = require('../../backend/config/supabaseClient');
-  supabase = client.supabase;
-} catch (err) {
-  const { createClient } = require('@supabase/supabase-js');
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('Supabase 설정을 찾을 수 없습니다. SUPABASE_URL 또는 SUPABASE_SERVICE_ROLE_KEY가 필요합니다.');
-  }
-  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
-}
+const { supabase } = require('../utils/supabaseClient');
 
 const TABLE = 'schedule_posts';
 
